@@ -1,4 +1,3 @@
-
 name: Test DTEK access
 
 on:
@@ -56,14 +55,20 @@ jobs:
                       impersonate="chrome120",
                   ),
               ) as client:
-                  streets = await client.get_streets("м. Дніпро")
-                  print("Streets received:", len(streets))
-                  for street in streets:
-                      if "героїв" in street.name.lower():
-                          print("MATCH:", street.name)
+                  response = await client.get_home_num(
+                      "м. Дніпро", "просп. Героїв"
+                  )
 
-                  if not streets:
-                      raise RuntimeError("DTEK returned no streets")
+                  print("Houses received:", len(response.houses))
+
+                  for house, entry in sorted(response.houses.items()):
+                      if house.upper().replace(" ", "") in ("1Б", "1БК"):
+                          print("HOUSE:", house)
+                          print("GROUP:", entry.primary_group)
+                          print("EXCLUDED:", entry.is_excluded)
+
+                  if not response.houses:
+                      raise RuntimeError("DTEK returned no houses")
 
           asyncio.run(main())
           PY
