@@ -29,7 +29,7 @@ jobs:
           pip install dtek-blackout-client playwright
           python -m playwright install --with-deps chromium
 
-      - name: Check schedule and send alerts
+      - name: Check schedules and send alerts
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -41,7 +41,7 @@ jobs:
           import os
           import subprocess
           import urllib.request
-          from datetime import datetime, timedelta
+          from datetime import datetime, timedelta, time
           from pathlib import Path
           from zoneinfo import ZoneInfo
 
@@ -77,7 +77,7 @@ jobs:
               if not result.get("ok"):
                   raise RuntimeError(f"Telegram error: {result}")
 
-          async def get_schedule():
+          async def get_schedules():
               base = "https://www.dtek-dnem.com.ua"
               url = base + "/ua/shutdowns"
 
@@ -117,47 +117,58 @@ jobs:
                   if entry.is_excluded:
                       raise RuntimeError("House is excluded from the schedule")
 
-                  print("House:", HOUSE)
-                  print("Group:", entry.primary_group)
+                  group = entry.primary_group
+                  print("House:", HOUSE, "Group:", group)
 
-                  schedule = await client.get_today_schedule(
-                      CITY, STREET, HOUSE
-                  )
+                  dates = DtekClient.get_available_fact_dates(response)
+                  dates = sorted(d for d in dates if d >= datetime.now(KYIV).date())
 
-                  if not schedule:
-                      raise RuntimeError("DTEK returned no schedule")
+                  print("Published schedule dates:", dates)
 
-                  return schedule, entry.primary_group
+                  schedules = []
 
-          def find_outages(schedule, now):
-              midnight = now.replace(
-                  hour=0, minute=0, second=0, microsecond=0
-              )
+                  for schedule_date in dates:
+                      schedule = await client.get_schedule_for_date(
+                          CITY, STREET, HOUSE, schedule_date
+                      )
 
+                      if schedule:
+                          schedules.append((schedule_date, schedule))
+                          print(f"Schedule received for {schedule_date}")
+                      else:
+                          print(f"No confirmed schedule for {schedule_date}")
+
+              return schedules, group
+
+          def find_outages(schedules):
               intervals = []
 
-              for slot, raw_status in schedule.items():
-                  hour = int(slot)
-                  start = midnight + timedelta(hours=hour - 1)
-                  status = str(
-                      getattr(raw_status, "value", raw_status)
-                  ).lower()
+              for schedule_date, schedule in schedules:
+                  midnight = datetime.combine(
+                      schedule_date, time.min, tzinfo=KYIV
+                  )
 
-                  if status == "no":
-                      intervals.append(
-                          (start, start + timedelta(hours=1))
-                      )
-                  elif status == "first":
-                      intervals.append(
-                          (start, start + timedelta(minutes=30))
-                      )
-                  elif status == "second":
-                      intervals.append((
-                          start + timedelta(minutes=30),
-                          start + timedelta(hours=1),
-                      ))
-                  elif status in ("maybe", "mfirst", "msecond", "unknown"):
-                      print(f"Unconfirmed slot {slot}: {status}")
+                  for slot, raw_status in schedule.items():
+                      hour = int(slot)
+                      start = midnight + timedelta(hours=hour - 1)
+
+                      status = str(
+                          getattr(raw_status, "value", raw_status)
+                      ).lower()
+
+                      if status == "no":
+                          end = start + timedelta(hours=1)
+                      elif status == "first":
+                          end = start + timedelta(minutes=30)
+                      elif status == "second":
+                          start += timedelta(minutes=30)
+                          end = start + timedelta(minutes=30)
+                      else:
+                          # Не отправляем предупреждения по сомнительным
+                          # или неизвестным статусам.
+                          continue
+
+                      intervals.append((start, end))
 
               intervals.sort(key=lambda item: item[0])
               merged = []
@@ -173,15 +184,7 @@ jobs:
 
               return merged
 
-          def save_alert(key, state):
-              state["alerted"] = [
-                  item for item in state.get("alerted", [])
-                  if item[:10] >= (datetime.now(KYIV).date() - timedelta(days=7)).isoformat()
-              ]
-
-              if key not in state["alerted"]:
-                  state["alerted"].append(key)
-
+          def save_state(state):
               STATE_FILE.write_text(
                   json.dumps(state, ensure_ascii=False, indent=2),
                   encoding="utf-8",
@@ -196,10 +199,7 @@ jobs:
                    "41898282+github-actions[bot]@users.noreply.github.com"],
                   check=True,
               )
-              subprocess.run(
-                  ["git", "add", str(STATE_FILE)],
-                  check=True,
-              )
+              subprocess.run(["git", "add", str(STATE_FILE)], check=True)
 
               changed = subprocess.run(
                   ["git", "diff", "--cached", "--quiet"]
@@ -210,9 +210,9 @@ jobs:
                       ["git", "commit", "-m", "Update DTEK alert state"],
                       check=True,
                   )
-                  branch = os.environ["GITHUB_REF_NAME"]
                   subprocess.run(
-                      ["git", "push", "origin", f"HEAD:{branch}"],
+                      ["git", "push", "origin",
+                       f"HEAD:{os.environ['GITHUB_REF_NAME']}"],
                       check=True,
                   )
 
@@ -220,34 +220,40 @@ jobs:
               now = datetime.now(KYIV)
               print("Kyiv time:", now.isoformat())
 
-              schedule, group = await get_schedule()
-              print("Today's schedule:", schedule)
-
-              outages = find_outages(schedule, now)
+              schedules, group = await get_schedules()
+              outages = find_outages(schedules)
 
               state = {"alerted": []}
+
               if STATE_FILE.exists():
                   try:
                       state = json.loads(
                           STATE_FILE.read_text(encoding="utf-8")
                       )
-                  except (json.JSONDecodeError, OSError):
-                      print("Could not read alert state; starting fresh.")
+                  except (OSError, json.JSONDecodeError):
+                      print("Could not read saved state; starting fresh.")
+
+              cutoff = (now.date() - timedelta(days=7)).isoformat()
+              state["alerted"] = [
+                  key for key in state.get("alerted", [])
+                  if key[:10] >= cutoff
+              ]
 
               for start, end in outages:
                   minutes = (start - now).total_seconds() / 60
                   key = start.strftime("%Y-%m-%d %H:%M")
 
                   print(
-                      f"Outage {start:%H:%M}-{end:%H:%M}; "
-                      f"starts in {minutes:.1f} minutes"
+                      f"Outage {start:%Y-%m-%d %H:%M}-"
+                      f"{end:%H:%M}; starts in {minutes:.1f} minutes"
                   )
 
-                  if 0 < minutes <= 30 and key not in state["alerted"]:
+                  if 0 < minutes <= 25 and key not in state["alerted"]:
                       message = (
                           "⚠️ УВАГА: скоро відключення світла!\n\n"
                           f"Адреса: {STREET}, {HOUSE}\n"
                           f"Група: {group}\n"
+                          f"Дата: {start:%d.%m.%Y}\n"
                           f"Початок: {start:%H:%M}\n"
                           f"Орієнтовне завершення: {end:%H:%M}\n\n"
                           "Підготуйтеся заздалегідь."
@@ -255,9 +261,12 @@ jobs:
 
                       send_telegram(message)
                       print("Telegram alert sent:", key)
-
-                      save_alert(key, state)
                       state["alerted"].append(key)
+
+              save_state(state)
+
+              if not schedules:
+                  print("No published schedules for upcoming dates.")
 
           asyncio.run(main())
           PY
