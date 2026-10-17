@@ -60,7 +60,7 @@ jobs:
                   )
 
                   print("Houses received:", len(response.houses))
-
+                  print("HOUSE LIST:", list(response.houses.keys()))
                                     for house, entry in sorted(response.houses.items()):
                       print("HOUSE:", repr(house))
 
