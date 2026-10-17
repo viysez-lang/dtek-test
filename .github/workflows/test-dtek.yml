@@ -7,6 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +44,7 @@ jobs:
                   "X-Requested-With": "XMLHttpRequest",
                   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
               }
+
               if token:
                   headers["X-CSRF-Token"] = token
 
@@ -56,25 +58,35 @@ jobs:
                       impersonate="chrome120",
                   ),
               ) as client:
+
                   response = await client.get_home_num(
                       "м. Дніпро", "просп. Героїв"
                   )
 
                   print("Houses received:", len(response.houses))
-                                    schedule = await client.get_today_schedule(
-                      "м. Дніпро", "просп. Героїв", "1/Б"
-                  )
-                  print("TODAY SCHEDULE:", schedule)
                   print("HOUSE LIST:", list(response.houses.keys())[:30])
 
-                  for house, entry in sorted(response.houses.items()):
-                      if "1" in str(house):
-                          print("HOUSE:", repr(house))
-                          print("GROUP:", entry.primary_group)
-                          print("EXCLUDED:", entry.is_excluded)
+                  house = "1/Б"
 
-                  if not response.houses:
-                      raise RuntimeError("DTEK returned no houses")
+                  if house not in response.houses:
+                      raise RuntimeError(
+                          f"House {house} not found. "
+                          f"Available houses: {list(response.houses.keys())[:30]}"
+                      )
+
+                  entry = response.houses[house]
+                  print("SELECTED HOUSE:", house)
+                  print("GROUP:", entry.primary_group)
+                  print("EXCLUDED:", entry.is_excluded)
+
+                  schedule = await client.get_today_schedule(
+                      "м. Дніпро", "просп. Героїв", house
+                  )
+
+                  print("TODAY SCHEDULE:", schedule)
+
+                  if schedule is None:
+                      print("No confirmed schedule returned for today.")
 
           asyncio.run(main())
           PY
