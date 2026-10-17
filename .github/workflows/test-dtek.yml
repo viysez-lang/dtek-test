@@ -20,10 +20,17 @@ jobs:
           pip install dtek-blackout-client playwright
           python -m playwright install --with-deps chromium
 
-      - name: Test DTEK
+      - name: Test DTEK and Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python - <<'PY'
           import asyncio
+          import json
+          import os
+          import urllib.request
+
           from curl_cffi.requests import AsyncSession
           from dtek_client import DtekClient
           from dtek_client.browser_auth import get_cleared_cookies
@@ -64,7 +71,6 @@ jobs:
                   )
 
                   print("Houses received:", len(response.houses))
-                  print("HOUSE LIST:", list(response.houses.keys())[:30])
 
                   house = "1/Б"
 
@@ -75,6 +81,7 @@ jobs:
                       )
 
                   entry = response.houses[house]
+
                   print("SELECTED HOUSE:", house)
                   print("GROUP:", entry.primary_group)
                   print("EXCLUDED:", entry.is_excluded)
@@ -85,8 +92,38 @@ jobs:
 
                   print("TODAY SCHEDULE:", schedule)
 
-                  if schedule is None:
-                      print("No confirmed schedule returned for today.")
+              telegram_token = os.environ["TELEGRAM_BOT_TOKEN"]
+              chat_id = os.environ["TELEGRAM_CHAT_ID"]
+
+              message = (
+                  "✅ Тест пройден!\n"
+                  "Бот ДТЕК Дніпро подключён.\n\n"
+                  "Адрес: просп. Героїв, 1/Б\n"
+                  f"Группа: {entry.primary_group}\n"
+                  "График ДТЭК успешно получен."
+              )
+
+              payload = json.dumps({
+                  "chat_id": chat_id,
+                  "text": message,
+              }).encode("utf-8")
+
+              request = urllib.request.Request(
+                  f"https://api.telegram.org/bot{telegram_token}/sendMessage",
+                  data=payload,
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+
+              with urllib.request.urlopen(request, timeout=15) as result:
+                  telegram_result = json.loads(result.read().decode("utf-8"))
+
+              if not telegram_result.get("ok"):
+                  raise RuntimeError(
+                      f"Telegram API error: {telegram_result}"
+                  )
+
+              print("TELEGRAM MESSAGE SENT SUCCESSFULLY")
 
           asyncio.run(main())
           PY
