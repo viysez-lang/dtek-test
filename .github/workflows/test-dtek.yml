@@ -1,11 +1,20 @@
 
-name: Test DTEK access
+name: DTEK outage alerts
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dtek-outage-alerts
+  cancel-in-progress: false
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,33 +23,67 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
 
       - name: Install dependencies
         run: |
           pip install dtek-blackout-client playwright
           python -m playwright install --with-deps chromium
 
-      - name: Test DTEK and Telegram
+      - name: Check schedule and send alerts
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
           python - <<'PY'
           import asyncio
           import json
           import os
+          import subprocess
           import urllib.request
+          from datetime import datetime, timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
 
           from curl_cffi.requests import AsyncSession
           from dtek_client import DtekClient
           from dtek_client.browser_auth import get_cleared_cookies
 
-          async def main():
+          CITY = "м. Дніпро"
+          STREET = "просп. Героїв"
+          HOUSE = "1/Б"
+          STATE_FILE = Path("alert_state.json")
+          KYIV = ZoneInfo("Europe/Kyiv")
+
+          def send_telegram(message):
+              token = os.environ["TELEGRAM_BOT_TOKEN"]
+              chat_id = os.environ["TELEGRAM_CHAT_ID"]
+
+              payload = json.dumps({
+                  "chat_id": chat_id,
+                  "text": message,
+              }).encode("utf-8")
+
+              request = urllib.request.Request(
+                  f"https://api.telegram.org/bot{token}/sendMessage",
+                  data=payload,
+                  headers={"Content-Type": "application/json"},
+                  method="POST",
+              )
+
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  result = json.loads(response.read().decode("utf-8"))
+
+              if not result.get("ok"):
+                  raise RuntimeError(f"Telegram error: {result}")
+
+          async def get_schedule():
               base = "https://www.dtek-dnem.com.ua"
               url = base + "/ua/shutdowns"
 
-              print("Opening DTEK with Chromium...")
-              cookies, token = await get_cleared_cookies(url)
+              print("Opening DTEK...")
+              cookies, csrf_token = await get_cleared_cookies(url)
 
               headers = {
                   "User-Agent": "Mozilla/5.0",
@@ -52,78 +95,170 @@ jobs:
                   "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
               }
 
-              if token:
-                  headers["X-CSRF-Token"] = token
+              if csrf_token:
+                  headers["X-CSRF-Token"] = csrf_token
 
               async with DtekClient(
                   "dnem",
                   ajax_url=base + "/ua/ajax",
                   session=AsyncSession(
-                      timeout=20,
+                      timeout=30,
                       headers=headers,
                       cookies=cookies,
                       impersonate="chrome120",
                   ),
               ) as client:
+                  response = await client.get_home_num(CITY, STREET)
 
-                  response = await client.get_home_num(
-                      "м. Дніпро", "просп. Героїв"
-                  )
+                  if HOUSE not in response.houses:
+                      raise RuntimeError(f"House not found: {HOUSE}")
 
-                  print("Houses received:", len(response.houses))
+                  entry = response.houses[HOUSE]
 
-                  house = "1/Б"
+                  if entry.is_excluded:
+                      raise RuntimeError("House is excluded from the schedule")
 
-                  if house not in response.houses:
-                      raise RuntimeError(
-                          f"House {house} not found. "
-                          f"Available houses: {list(response.houses.keys())[:30]}"
-                      )
-
-                  entry = response.houses[house]
-
-                  print("SELECTED HOUSE:", house)
-                  print("GROUP:", entry.primary_group)
-                  print("EXCLUDED:", entry.is_excluded)
+                  print("House:", HOUSE)
+                  print("Group:", entry.primary_group)
 
                   schedule = await client.get_today_schedule(
-                      "м. Дніпро", "просп. Героїв", house
+                      CITY, STREET, HOUSE
                   )
 
-                  print("TODAY SCHEDULE:", schedule)
+                  if not schedule:
+                      raise RuntimeError("DTEK returned no schedule")
 
-              telegram_token = os.environ["TELEGRAM_BOT_TOKEN"]
-              chat_id = os.environ["TELEGRAM_CHAT_ID"]
+                  return schedule, entry.primary_group
 
-              message = (
-                  "✅ Тест пройден!\n"
-                  "Бот ДТЕК Дніпро подключён.\n\n"
-                  "Адрес: просп. Героїв, 1/Б\n"
-                  f"Группа: {entry.primary_group}\n"
-                  "График ДТЭК успешно получен."
+          def find_outages(schedule, now):
+              midnight = now.replace(
+                  hour=0, minute=0, second=0, microsecond=0
               )
 
-              payload = json.dumps({
-                  "chat_id": chat_id,
-                  "text": message,
-              }).encode("utf-8")
+              intervals = []
 
-              request = urllib.request.Request(
-                  f"https://api.telegram.org/bot{telegram_token}/sendMessage",
-                  data=payload,
-                  headers={"Content-Type": "application/json"},
-                  method="POST",
+              for slot, raw_status in schedule.items():
+                  hour = int(slot)
+                  start = midnight + timedelta(hours=hour - 1)
+                  status = str(
+                      getattr(raw_status, "value", raw_status)
+                  ).lower()
+
+                  if status == "no":
+                      intervals.append(
+                          (start, start + timedelta(hours=1))
+                      )
+                  elif status == "first":
+                      intervals.append(
+                          (start, start + timedelta(minutes=30))
+                      )
+                  elif status == "second":
+                      intervals.append((
+                          start + timedelta(minutes=30),
+                          start + timedelta(hours=1),
+                      ))
+                  elif status in ("maybe", "mfirst", "msecond", "unknown"):
+                      print(f"Unconfirmed slot {slot}: {status}")
+
+              intervals.sort(key=lambda item: item[0])
+              merged = []
+
+              for start, end in intervals:
+                  if merged and start <= merged[-1][1]:
+                      merged[-1] = (
+                          merged[-1][0],
+                          max(merged[-1][1], end),
+                      )
+                  else:
+                      merged.append((start, end))
+
+              return merged
+
+          def save_alert(key, state):
+              state["alerted"] = [
+                  item for item in state.get("alerted", [])
+                  if item[:10] >= (datetime.now(KYIV).date() - timedelta(days=7)).isoformat()
+              ]
+
+              if key not in state["alerted"]:
+                  state["alerted"].append(key)
+
+              STATE_FILE.write_text(
+                  json.dumps(state, ensure_ascii=False, indent=2),
+                  encoding="utf-8",
               )
 
-              with urllib.request.urlopen(request, timeout=15) as result:
-                  telegram_result = json.loads(result.read().decode("utf-8"))
+              subprocess.run(
+                  ["git", "config", "user.name", "github-actions[bot]"],
+                  check=True,
+              )
+              subprocess.run(
+                  ["git", "config", "user.email",
+                   "41898282+github-actions[bot]@users.noreply.github.com"],
+                  check=True,
+              )
+              subprocess.run(
+                  ["git", "add", str(STATE_FILE)],
+                  check=True,
+              )
 
-              if not telegram_result.get("ok"):
-                  raise RuntimeError(
-                      f"Telegram API error: {telegram_result}"
+              changed = subprocess.run(
+                  ["git", "diff", "--cached", "--quiet"]
+              ).returncode != 0
+
+              if changed:
+                  subprocess.run(
+                      ["git", "commit", "-m", "Update DTEK alert state"],
+                      check=True,
+                  )
+                  branch = os.environ["GITHUB_REF_NAME"]
+                  subprocess.run(
+                      ["git", "push", "origin", f"HEAD:{branch}"],
+                      check=True,
                   )
 
-              print("TELEGRAM MESSAGE SENT SUCCESSFULLY")
+          async def main():
+              now = datetime.now(KYIV)
+              print("Kyiv time:", now.isoformat())
+
+              schedule, group = await get_schedule()
+              print("Today's schedule:", schedule)
+
+              outages = find_outages(schedule, now)
+
+              state = {"alerted": []}
+              if STATE_FILE.exists():
+                  try:
+                      state = json.loads(
+                          STATE_FILE.read_text(encoding="utf-8")
+                      )
+                  except (json.JSONDecodeError, OSError):
+                      print("Could not read alert state; starting fresh.")
+
+              for start, end in outages:
+                  minutes = (start - now).total_seconds() / 60
+                  key = start.strftime("%Y-%m-%d %H:%M")
+
+                  print(
+                      f"Outage {start:%H:%M}-{end:%H:%M}; "
+                      f"starts in {minutes:.1f} minutes"
+                  )
+
+                  if 0 < minutes <= 30 and key not in state["alerted"]:
+                      message = (
+                          "⚠️ УВАГА: скоро відключення світла!\n\n"
+                          f"Адреса: {STREET}, {HOUSE}\n"
+                          f"Група: {group}\n"
+                          f"Початок: {start:%H:%M}\n"
+                          f"Орієнтовне завершення: {end:%H:%M}\n\n"
+                          "Підготуйтеся заздалегідь."
+                      )
+
+                      send_telegram(message)
+                      print("Telegram alert sent:", key)
+
+                      save_alert(key, state)
+                      state["alerted"].append(key)
 
           asyncio.run(main())
           PY
