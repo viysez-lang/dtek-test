@@ -1,0 +1,69 @@
+
+name: Test DTEK access
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install dtek-blackout-client playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Test DTEK
+        run: |
+          python - <<'PY'
+          import asyncio
+          from curl_cffi.requests import AsyncSession
+          from dtek_client import DtekClient
+          from dtek_client.browser_auth import get_cleared_cookies
+
+          async def main():
+              base = "https://www.dtek-dnem.com.ua"
+              url = base + "/ua/shutdowns"
+
+              print("Opening DTEK with Chromium...")
+              cookies, token = await get_cleared_cookies(url)
+
+              headers = {
+                  "User-Agent": "Mozilla/5.0",
+                  "Accept": "application/json, text/javascript, */*; q=0.01",
+                  "Accept-Language": "uk,en;q=0.9",
+                  "Origin": base,
+                  "Referer": url,
+                  "X-Requested-With": "XMLHttpRequest",
+                  "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+              }
+              if token:
+                  headers["X-CSRF-Token"] = token
+
+              async with DtekClient(
+                  "dnem",
+                  ajax_url=base + "/ua/ajax",
+                  session=AsyncSession(
+                      timeout=20,
+                      headers=headers,
+                      cookies=cookies,
+                      impersonate="chrome120",
+                  ),
+              ) as client:
+                  streets = await client.get_streets("м. Дніпро")
+                  print("Streets received:", len(streets))
+                  for street in streets:
+                      if "героїв" in street.name.lower():
+                          print("MATCH:", street.name)
+
+                  if not streets:
+                      raise RuntimeError("DTEK returned no streets")
+
+          asyncio.run(main())
+          PY
