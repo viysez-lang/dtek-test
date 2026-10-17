@@ -61,11 +61,8 @@ jobs:
 
                   print("Houses received:", len(response.houses))
 
-                  for house, entry in sorted(response.houses.items()):
-                      if house.upper().replace(" ", "") in ("1Б", "1БК"):
-                          print("HOUSE:", house)
-                          print("GROUP:", entry.primary_group)
-                          print("EXCLUDED:", entry.is_excluded)
+                                    for house, entry in sorted(response.houses.items()):
+                      print("HOUSE:", repr(house))
 
                   if not response.houses:
                       raise RuntimeError("DTEK returned no houses")
