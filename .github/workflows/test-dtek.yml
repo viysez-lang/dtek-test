@@ -37,6 +37,7 @@ jobs:
         run: |
           python - <<'PY'
           import asyncio
+          import hashlib
           import json
           import os
           import subprocess
@@ -121,7 +122,8 @@ jobs:
                   print("House:", HOUSE, "Group:", group)
 
                   dates = DtekClient.get_available_fact_dates(response)
-                  dates = sorted(d for d in dates if d >= datetime.now(KYIV).date())
+                  today = datetime.now(KYIV).date()
+                  dates = sorted(d for d in dates if d >= today)
 
                   print("Published schedule dates:", dates)
 
@@ -133,44 +135,41 @@ jobs:
                       )
 
                       if schedule:
-                          schedules.append((schedule_date, schedule))
+                          statuses = {
+                              str(slot): str(
+                                  getattr(status, "value", status)
+                              ).lower()
+                              for slot, status in schedule.items()
+                          }
+                          schedules.append((schedule_date, statuses))
                           print(f"Schedule received for {schedule_date}")
                       else:
-                          print(f"No confirmed schedule for {schedule_date}")
+                          print(f"No schedule returned for {schedule_date}")
 
               return schedules, group
 
-          def find_outages(schedules):
+          def outage_intervals(schedule_date, statuses):
+              midnight = datetime.combine(
+                  schedule_date, time.min, tzinfo=KYIV
+              )
               intervals = []
 
-              for schedule_date, schedule in schedules:
-                  midnight = datetime.combine(
-                      schedule_date, time.min, tzinfo=KYIV
-                  )
+              for slot, status in statuses.items():
+                  start = midnight + timedelta(hours=int(slot) - 1)
 
-                  for slot, raw_status in schedule.items():
-                      hour = int(slot)
-                      start = midnight + timedelta(hours=hour - 1)
+                  if status == "no":
+                      end = start + timedelta(hours=1)
+                  elif status == "first":
+                      end = start + timedelta(minutes=30)
+                  elif status == "second":
+                      start += timedelta(minutes=30)
+                      end = start + timedelta(minutes=30)
+                  else:
+                      continue
 
-                      status = str(
-                          getattr(raw_status, "value", raw_status)
-                      ).lower()
+                  intervals.append((start, end))
 
-                      if status == "no":
-                          end = start + timedelta(hours=1)
-                      elif status == "first":
-                          end = start + timedelta(minutes=30)
-                      elif status == "second":
-                          start += timedelta(minutes=30)
-                          end = start + timedelta(minutes=30)
-                      else:
-                          # Не отправляем предупреждения по сомнительным
-                          # или неизвестным статусам.
-                          continue
-
-                      intervals.append((start, end))
-
-              intervals.sort(key=lambda item: item[0])
+              intervals.sort(key=lambda pair: pair[0])
               merged = []
 
               for start, end in intervals:
@@ -183,6 +182,18 @@ jobs:
                       merged.append((start, end))
 
               return merged
+
+          def describe_schedule(schedule_date, statuses):
+              intervals = outage_intervals(schedule_date, statuses)
+
+              if not intervals:
+                  return "В полученном графике отключения не обозначены."
+
+              lines = [
+                  f"• {start:%H:%M}–{end:%H:%M}"
+                  for start, end in intervals
+              ]
+              return "Плановые отключения:\n" + "\n".join(lines)
 
           def save_state(state):
               STATE_FILE.write_text(
@@ -221,10 +232,8 @@ jobs:
               print("Kyiv time:", now.isoformat())
 
               schedules, group = await get_schedules()
-              outages = find_outages(schedules)
 
               state = {"alerted": []}
-
               if STATE_FILE.exists():
                   try:
                       state = json.loads(
@@ -233,13 +242,71 @@ jobs:
                   except (OSError, json.JSONDecodeError):
                       print("Could not read saved state; starting fresh.")
 
-              cutoff = (now.date() - timedelta(days=7)).isoformat()
+              state.setdefault("alerted", [])
+              previous = state.get("known_schedules")
+              current = {}
+
+              for schedule_date, statuses in schedules:
+                  fingerprint = hashlib.sha256(
+                      json.dumps(
+                          statuses, sort_keys=True
+                      ).encode("utf-8")
+                  ).hexdigest()
+
+                  date_key = schedule_date.isoformat()
+                  current[date_key] = {
+                      "fingerprint": fingerprint,
+                      "statuses": statuses,
+                  }
+
+                  if previous is None:
+                      print(
+                          f"Initial baseline for {date_key}; "
+                          "no publication notification."
+                      )
+                  elif date_key not in previous:
+                      message = (
+                          "📅 ДТЕК опубликовал новый график!\n\n"
+                          f"Адрес: {STREET}, {HOUSE}\n"
+                          f"Группа: {group}\n"
+                          f"Дата графика: {schedule_date:%d.%m.%Y}\n\n"
+                          f"{describe_schedule(schedule_date, statuses)}"
+                      )
+                      send_telegram(message)
+                      print("New schedule notification sent:", date_key)
+
+                  elif previous[date_key].get("fingerprint") != fingerprint:
+                      message = (
+                          "🔄 ДТЕК изменил график отключений!\n\n"
+                          f"Адрес: {STREET}, {HOUSE}\n"
+                          f"Группа: {group}\n"
+                          f"Дата графика: {schedule_date:%d.%m.%Y}\n\n"
+                          f"{describe_schedule(schedule_date, statuses)}"
+                      )
+                      send_telegram(message)
+                      print("Schedule update notification sent:", date_key)
+
+              cutoff = (
+                  now.date() - timedelta(days=7)
+              ).isoformat()
+
               state["alerted"] = [
-                  key for key in state.get("alerted", [])
+                  key for key in state["alerted"]
                   if key[:10] >= cutoff
               ]
 
-              for start, end in outages:
+              all_outages = []
+
+              for date_key, item in current.items():
+                  schedule_date = datetime.strptime(
+                      date_key, "%Y-%m-%d"
+                  ).date()
+
+                  all_outages.extend(
+                      outage_intervals(schedule_date, item["statuses"])
+                  )
+
+              for start, end in sorted(all_outages):
                   minutes = (start - now).total_seconds() / 60
                   key = start.strftime("%Y-%m-%d %H:%M")
 
@@ -260,9 +327,10 @@ jobs:
                       )
 
                       send_telegram(message)
-                      print("Telegram alert sent:", key)
                       state["alerted"].append(key)
+                      print("Outage alert sent:", key)
 
+              state["known_schedules"] = current
               save_state(state)
 
               if not schedules:
