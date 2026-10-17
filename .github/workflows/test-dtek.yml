@@ -1,3 +1,4 @@
+
 name: Test DTEK access
 
 on:
@@ -60,9 +61,13 @@ jobs:
                   )
 
                   print("Houses received:", len(response.houses))
-                  print("HOUSE LIST:", list(response.houses.keys()))
-                                    for house, entry in sorted(response.houses.items()):
-                      print("HOUSE:", repr(house))
+                  print("HOUSE LIST:", list(response.houses.keys())[:30])
+
+                  for house, entry in sorted(response.houses.items()):
+                      if "1" in str(house):
+                          print("HOUSE:", repr(house))
+                          print("GROUP:", entry.primary_group)
+                          print("EXCLUDED:", entry.is_excluded)
 
                   if not response.houses:
                       raise RuntimeError("DTEK returned no houses")
