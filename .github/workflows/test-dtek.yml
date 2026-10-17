@@ -61,6 +61,10 @@ jobs:
                   )
 
                   print("Houses received:", len(response.houses))
+                                    schedule = await client.get_today_schedule(
+                      "м. Дніпро", "просп. Героїв", "1/Б"
+                  )
+                  print("TODAY SCHEDULE:", schedule)
                   print("HOUSE LIST:", list(response.houses.keys())[:30])
 
                   for house, entry in sorted(response.houses.items()):
