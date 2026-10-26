@@ -58,26 +58,38 @@ jobs:
 
           def send_telegram(message):
               token = os.environ["TELEGRAM_BOT_TOKEN"]
-              chat_id = os.environ["TELEGRAM_CHAT_ID"]
+              chat_ids = [
+                  os.environ["TELEGRAM_CHAT_ID"],
+                  os.environ["TELEGRAM_CHAT_ID_2"],
+              ]
 
-              payload = json.dumps({
-                  "chat_id": chat_id,
-                  "text": message,
-              }).encode("utf-8")
+              errors = []
 
-              request = urllib.request.Request(
-                  f"https://api.telegram.org/bot{token}/sendMessage",
-                  data=payload,
-                  headers={"Content-Type": "application/json"},
-                  method="POST",
-              )
+              for chat_id in chat_ids:
+                  try:
+                      payload = json.dumps({
+                          "chat_id": chat_id,
+                          "text": message,
+                      }).encode("utf-8")
 
-              with urllib.request.urlopen(request, timeout=20) as response:
-                  result = json.loads(response.read().decode("utf-8"))
+                      request = urllib.request.Request(
+                          f"https://api.telegram.org/bot{token}/sendMessage",
+                          data=payload,
+                          headers={"Content-Type": "application/json"},
+                          method="POST",
+                      )
 
-              if not result.get("ok"):
-                  raise RuntimeError(f"Telegram error: {result}")
+                      with urllib.request.urlopen(request, timeout=20) as response:
+                          result = json.loads(response.read().decode("utf-8"))
 
+                      if not result.get("ok"):
+                          raise RuntimeError(f"Telegram error: {result}")
+
+                  except Exception as e:
+                      errors.append(f"{chat_id}: {e}")
+
+              if errors:
+                  raise RuntimeError("Помилка надсилання: " + "; ".join(errors))
           async def get_schedules():
               base = "https://www.dtek-dnem.com.ua"
               url = base + "/ua/shutdowns"
