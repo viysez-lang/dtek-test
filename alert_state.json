@@ -1,4 +1,34 @@
 {
   "alerted": [],
-  "known_schedules": {}
+  "known_schedules": {
+    "2026-10-26": {
+      "fingerprint": "e213902f8c4c8b18ee5b3abc2f63c1d743f5fbaa9d33480983bd8c0c0432f049",
+      "statuses": {
+        "1": "yes",
+        "2": "yes",
+        "3": "yes",
+        "4": "yes",
+        "5": "yes",
+        "6": "yes",
+        "7": "yes",
+        "8": "no",
+        "9": "no",
+        "10": "first",
+        "11": "yes",
+        "12": "yes",
+        "13": "yes",
+        "14": "yes",
+        "15": "yes",
+        "16": "yes",
+        "17": "yes",
+        "18": "yes",
+        "19": "yes",
+        "20": "yes",
+        "21": "yes",
+        "22": "yes",
+        "23": "yes",
+        "24": "yes"
+      }
+    }
+  }
 }
