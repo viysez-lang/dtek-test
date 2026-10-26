@@ -187,13 +187,13 @@ jobs:
               intervals = outage_intervals(schedule_date, statuses)
 
               if not intervals:
-                  return "В полученном графике отключения не обозначены."
+                  return "В отриманому графіку відключення не зазначені."
 
               lines = [
                   f"• {start:%H:%M}–{end:%H:%M}"
                   for start, end in intervals
               ]
-              return "Плановые отключения:\n" + "\n".join(lines)
+              return "Планові відключення:\n" + "\n".join(lines)
 
           def save_state(state):
               STATE_FILE.write_text(
@@ -266,10 +266,10 @@ jobs:
                       )
                   elif date_key not in previous:
                       message = (
-                          "📅 ДТЕК опубликовал новый график!\n\n"
-                          f"Адрес: {STREET}, {HOUSE}\n"
-                          f"Группа: {group}\n"
-                          f"Дата графика: {schedule_date:%d.%m.%Y}\n\n"
+                          "📅 ДТЕК опублікував новий графік!\n\n"
+                          f"Адреса: {STREET}, {HOUSE}\n"
+                          f"Група: {group}\n"
+                          f"Дата графіка: {schedule_date:%d.%m.%Y}\n\n"
                           f"{describe_schedule(schedule_date, statuses)}"
                       )
                       send_telegram(message)
@@ -277,10 +277,10 @@ jobs:
 
                   elif previous[date_key].get("fingerprint") != fingerprint:
                       message = (
-                          "🔄 ДТЕК изменил график отключений!\n\n"
-                          f"Адрес: {STREET}, {HOUSE}\n"
-                          f"Группа: {group}\n"
-                          f"Дата графика: {schedule_date:%d.%m.%Y}\n\n"
+                          "🔄 ДТЕК змінив графік відключень!\n\n"
+                          f"Адреса: {STREET}, {HOUSE}\n"
+                          f"Група: {group}\n"
+                          f"Дата графіка: {schedule_date:%d.%m.%Y}\n\n"
                           f"{describe_schedule(schedule_date, statuses)}"
                       )
                       send_telegram(message)
