@@ -2,35 +2,5 @@
   "alerted": [
     "2026-10-26 07:00"
   ],
-  "known_schedules": {
-    "2026-10-27": {
-      "fingerprint": "b29a1b707c360b0a27832dbc411b301af098d01dcb3506c2b9681f12fcb18d67",
-      "statuses": {
-        "1": "yes",
-        "2": "yes",
-        "3": "yes",
-        "4": "yes",
-        "5": "yes",
-        "6": "yes",
-        "7": "yes",
-        "8": "yes",
-        "9": "yes",
-        "10": "yes",
-        "11": "yes",
-        "12": "yes",
-        "13": "yes",
-        "14": "yes",
-        "15": "yes",
-        "16": "yes",
-        "17": "yes",
-        "18": "yes",
-        "19": "yes",
-        "20": "yes",
-        "21": "yes",
-        "22": "yes",
-        "23": "yes",
-        "24": "yes"
-      }
-    }
-  }
+  "known_schedules": {}
 }
