@@ -91,6 +91,92 @@ jobs:
 
               if errors:
                   raise RuntimeError("Помилка надсилання: " + "; ".join(errors))
+          def check_emergency_outage(entry, state):
+              """Check emergency outage data without changing schedule logic."""
+              state_key = "known_emergency_outage"
+
+              sub_type = (entry.sub_type or "").strip()
+              start_date = (entry.start_date or "").strip()
+              end_date = (entry.end_date or "").strip()
+              outage_type = str(entry.outage_type or "").strip()
+
+              # An entirely empty record means DTEK no longer shows an outage.
+              if not any((sub_type, start_date, end_date, outage_type)):
+                  current = None
+              # Incomplete data must not trigger a false start/end/update alert.
+              elif not (sub_type and start_date and end_date):
+                  print("Emergency data is incomplete; keeping previous state.")
+                  return
+              else:
+                  current = {
+                      "sub_type": sub_type,
+                      "start_date": start_date,
+                      "end_date": end_date,
+                      "outage_type": outage_type,
+                  }
+
+              # First run: save a baseline without sending an old-outage alert.
+              if state_key not in state:
+                  state[state_key] = current
+                  print("Emergency outage baseline saved; no notification.")
+                  return
+
+              previous = state[state_key]
+
+              if previous == current:
+                  print("Emergency outage data unchanged.")
+                  return
+
+              if previous is None and current is not None:
+                  message = (
+                      "🚨 АВАРІЙНЕ ВІДКЛЮЧЕННЯ!\n\n"
+                      f"Адреса: {STREET}, {HOUSE}\n"
+                      f"Група: {entry.primary_group}\n"
+                      f"Причина: {current['sub_type']}\n"
+                      f"Початок: {current['start_date']}\n"
+                      f"Орієнтовне відновлення: {current['end_date']}"
+                  )
+                  send_telegram(message)
+                  print("New emergency outage notification sent.")
+
+              elif previous is not None and current is None:
+                  message = (
+                      "ℹ️ ДТЕК більше не відображає аварійне відключення "
+                      "за вашою адресою.\n\n"
+                      f"Адреса: {STREET}, {HOUSE}\n"
+                      f"Попередній орієнтовний час відновлення: "
+                      f"{previous['end_date']}\n\n"
+                      "Це означає, що запис про аварію зник із даних ДТЕК; "
+                      "фактичну появу електроенергії варто перевірити."
+                  )
+                  send_telegram(message)
+                  print("Emergency outage disappearance notification sent.")
+
+              else:
+                  if previous.get("end_date") != current["end_date"]:
+                      message = (
+                          "🔄 ДТЕК змінив орієнтовний час відновлення "
+                          "після аварійного відключення.\n\n"
+                          f"Адреса: {STREET}, {HOUSE}\n"
+                          f"Було: {previous['end_date']}\n"
+                          f"Стало: {current['end_date']}\n"
+                          f"Причина: {current['sub_type']}"
+                      )
+                  else:
+                      message = (
+                          "🔄 ДТЕК оновив дані аварійного відключення.\n\n"
+                          f"Адреса: {STREET}, {HOUSE}\n"
+                          f"Причина: {current['sub_type']}\n"
+                          f"Початок: {current['start_date']}\n"
+                          f"Орієнтовне відновлення: {current['end_date']}"
+                      )
+                  send_telegram(message)
+                  print("Emergency outage update notification sent.")
+
+              # Update state only after successful Telegram delivery.
+              state[state_key] = current
+
+
           async def get_schedules():
               base = "https://www.dtek-dnem.com.ua"
               url = base + "/ua/shutdowns"
@@ -159,7 +245,7 @@ jobs:
                       else:
                           print(f"No schedule returned for {schedule_date}")
 
-              return schedules, group
+              return schedules, group, entry
 
           def outage_intervals(schedule_date, statuses):
               midnight = datetime.combine(
@@ -244,7 +330,7 @@ jobs:
               now = datetime.now(KYIV)
               print("Kyiv time:", now.isoformat())
 
-              schedules, group = await get_schedules()
+              schedules, group, entry = await get_schedules()
 
               state = {"alerted": []}
               if STATE_FILE.exists():
@@ -256,6 +342,10 @@ jobs:
                       print("Could not read saved state; starting fresh.")
 
               state.setdefault("alerted", [])
+
+              # Independent emergency-outage notifications.
+              check_emergency_outage(entry, state)
+
               previous = state.get("known_schedules")
               current = {}
 
