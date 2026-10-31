@@ -2,5 +2,11 @@
   "alerted": [
     "2026-10-26 07:00"
   ],
-  "known_schedules": {}
+  "known_schedules": {},
+  "known_emergency_outage": {
+    "sub_type": "Аварійні ремонтні роботи",
+    "start_date": "11:53 31.10.2026",
+    "end_date": "17:25 31.10.2026",
+    "outage_type": "2"
+  }
 }
