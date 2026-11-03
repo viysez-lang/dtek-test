@@ -31,10 +31,5 @@
       }
     }
   },
-  "known_emergency_outage": {
-    "sub_type": "Стабілізаційне відключення (Згідно графіку погодинних відключень)",
-    "start_date": "11:45 03.11.2026",
-    "end_date": "19:00 03.11.2026",
-    "outage_type": "2"
-  }
+  "known_emergency_outage": null
 }
