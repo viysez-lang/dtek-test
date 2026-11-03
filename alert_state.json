@@ -1,5 +1,7 @@
 {
-  "alerted": [],
+  "alerted": [
+    "2026-11-03 22:00"
+  ],
   "known_schedules": {
     "2026-11-03": {
       "fingerprint": "641f14ac88640b99d8921b4c57f74efb6eda6004b36acfb874f7f00b32e9117e",
