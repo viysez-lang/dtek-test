@@ -4,35 +4,6 @@
     "2026-11-04 00:00"
   ],
   "known_schedules": {
-    "2026-11-03": {
-      "fingerprint": "641f14ac88640b99d8921b4c57f74efb6eda6004b36acfb874f7f00b32e9117e",
-      "statuses": {
-        "1": "yes",
-        "2": "yes",
-        "3": "yes",
-        "4": "yes",
-        "5": "yes",
-        "6": "yes",
-        "7": "yes",
-        "8": "yes",
-        "9": "yes",
-        "10": "yes",
-        "11": "yes",
-        "12": "second",
-        "13": "no",
-        "14": "no",
-        "15": "no",
-        "16": "no",
-        "17": "yes",
-        "18": "yes",
-        "19": "yes",
-        "20": "yes",
-        "21": "yes",
-        "22": "yes",
-        "23": "no",
-        "24": "no"
-      }
-    },
     "2026-11-04": {
       "fingerprint": "ba8988b67ad187b07f9c33807fe0220af6957d645ebf507ad42cc90d2dd415fd",
       "statuses": {
