@@ -2,7 +2,7 @@
   "alerted": [],
   "known_schedules": {
     "2026-11-03": {
-      "fingerprint": "3dba293d2254caac8530cd1a482c818cc3955e9a6c1079f3335ddd5b80d893ed",
+      "fingerprint": "af7b8d236925553fe7add2a25904b0453cd333226a86ecf11443870dfbbe4f40",
       "statuses": {
         "1": "yes",
         "2": "yes",
@@ -19,10 +19,10 @@
         "13": "no",
         "14": "no",
         "15": "no",
-        "16": "first",
-        "17": "yes",
-        "18": "yes",
-        "19": "yes",
+        "16": "no",
+        "17": "no",
+        "18": "no",
+        "19": "no",
         "20": "yes",
         "21": "yes",
         "22": "yes",
@@ -31,5 +31,10 @@
       }
     }
   },
-  "known_emergency_outage": null
+  "known_emergency_outage": {
+    "sub_type": "Стабілізаційне відключення (Згідно графіку погодинних відключень)",
+    "start_date": "11:45 03.11.2026",
+    "end_date": "19:00 03.11.2026",
+    "outage_type": "2"
+  }
 }
