@@ -2,7 +2,7 @@
   "alerted": [],
   "known_schedules": {
     "2026-11-03": {
-      "fingerprint": "b29a1b707c360b0a27832dbc411b301af098d01dcb3506c2b9681f12fcb18d67",
+      "fingerprint": "3dba293d2254caac8530cd1a482c818cc3955e9a6c1079f3335ddd5b80d893ed",
       "statuses": {
         "1": "yes",
         "2": "yes",
@@ -15,11 +15,11 @@
         "9": "yes",
         "10": "yes",
         "11": "yes",
-        "12": "yes",
-        "13": "yes",
-        "14": "yes",
-        "15": "yes",
-        "16": "yes",
+        "12": "second",
+        "13": "no",
+        "14": "no",
+        "15": "no",
+        "16": "first",
         "17": "yes",
         "18": "yes",
         "19": "yes",
