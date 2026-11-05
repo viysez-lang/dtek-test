@@ -8,35 +8,6 @@
     "2026-11-05 05:30"
   ],
   "known_schedules": {
-    "2026-11-05": {
-      "fingerprint": "2e53322710f16c53437e241bd54c638a87158a4ab31a8482db8a8d72e60817d5",
-      "statuses": {
-        "1": "first",
-        "2": "yes",
-        "3": "yes",
-        "4": "yes",
-        "5": "yes",
-        "6": "second",
-        "7": "no",
-        "8": "no",
-        "9": "no",
-        "10": "no",
-        "11": "yes",
-        "12": "yes",
-        "13": "yes",
-        "14": "yes",
-        "15": "yes",
-        "16": "yes",
-        "17": "no",
-        "18": "no",
-        "19": "no",
-        "20": "no",
-        "21": "no",
-        "22": "no",
-        "23": "yes",
-        "24": "yes"
-      }
-    },
     "2026-11-06": {
       "fingerprint": "5a526eb9db42ea73398ec081aedc03b70aee0b1b48aa6950ebc4c945cffaa765",
       "statuses": {
