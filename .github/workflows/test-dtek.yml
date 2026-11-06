@@ -89,8 +89,8 @@ jobs:
 
               if errors:
                   raise RuntimeError("Помилка надсилання: " + "; ".join(errors))
-          def check_emergency_outage(entry, state):
-              """Check emergency outage data without changing schedule logic."""
+                   def check_emergency_outage(entry, state):
+              """Check only explicitly identified emergency outages."""
               state_key = "known_emergency_outage"
 
               sub_type = (entry.sub_type or "").strip()
@@ -98,11 +98,29 @@ jobs:
               end_date = (entry.end_date or "").strip()
               outage_type = str(entry.outage_type or "").strip()
 
-              # An entirely empty record means DTEK no longer shows an outage.
-              if not any((sub_type, start_date, end_date, outage_type)):
+              reason = sub_type.casefold()
+
+              # Explicitly exclude scheduled and stabilization outages.
+              scheduled_markers = (
+                  "стабілізац",
+                  "графік погодин",
+                  "погодинн",
+                  "планов",
+              )
+
+              is_scheduled = any(
+                  marker in reason for marker in scheduled_markers
+              )
+
+              # Emergency must be explicitly stated in the reason.
+              is_emergency = (
+                  "аварійн" in reason
+                  and not is_scheduled
+              )
+
+              if not is_emergency:
                   current = None
-              # Incomplete data must not trigger a false start/end/update alert.
-              elif not (sub_type and start_date and end_date):
+              elif not (start_date and end_date):
                   print("Emergency data is incomplete; keeping previous state.")
                   return
               else:
@@ -113,7 +131,7 @@ jobs:
                       "outage_type": outage_type,
                   }
 
-              # First run: save a baseline without sending an old-outage alert.
+              # First run: save baseline without notification.
               if state_key not in state:
                   state[state_key] = current
                   print("Emergency outage baseline saved; no notification.")
@@ -144,8 +162,7 @@ jobs:
                       f"Адреса: {STREET}, {HOUSE}\n"
                       f"Попередній орієнтовний час відновлення: "
                       f"{previous['end_date']}\n\n"
-                      "Це означає, що запис про аварію зник із даних ДТЕК; "
-                      "фактичну появу електроенергії варто перевірити."
+                      "Це не підтверджує фактичне відновлення електроенергії."
                   )
                   send_telegram(message)
                   print("Emergency outage disappearance notification sent.")
@@ -171,7 +188,6 @@ jobs:
                   send_telegram(message)
                   print("Emergency outage update notification sent.")
 
-              # Update state only after successful Telegram delivery.
               state[state_key] = current
 
 
