@@ -89,7 +89,8 @@ jobs:
 
               if errors:
                   raise RuntimeError("Помилка надсилання: " + "; ".join(errors))
-                   def check_emergency_outage(entry, state):
+                   
+          def check_emergency_outage(entry, state):
               """Check only explicitly identified emergency outages."""
               state_key = "known_emergency_outage"
 
