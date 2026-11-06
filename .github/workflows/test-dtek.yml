@@ -211,6 +211,7 @@ jobs:
                       raise RuntimeError(f"House not found: {HOUSE}")
 
                   entry = response.houses[HOUSE]
+                  print("DTEK HOUSE ENTRY:", repr(entry))
 
                   if entry.is_excluded:
                       raise RuntimeError("House is excluded from the schedule")
