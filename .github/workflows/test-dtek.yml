@@ -101,11 +101,10 @@ jobs:
 
               reason = sub_type.casefold()
 
-              # Explicitly exclude scheduled and stabilization outages.
+              # Exclude only actual scheduled/stabilization outages.
               scheduled_markers = (
                   "стабілізац",
-                  "графік погодин",
-                  "погодинн",
+                  "за графіком погодин",
                   "планов",
               )
 
