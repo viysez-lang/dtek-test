@@ -454,12 +454,13 @@ jobs:
 
                   if 0 < minutes <= 25 and key not in state["alerted"]:
                       message = (
-                          "⚠️ УВАГА: скоро відключення світла!\n\n"
-                          f"Адреса: {STREET}, {HOUSE}\n"
-                          f"Група: {group}\n"
-                          f"Дата: {start:%d.%m.%Y}\n"
-                          f"Початок: {start:%H:%M}\n"
-                          f"Орієнтовне завершення: {end:%H:%M}\n\n"
+                          "⚠️ СКОРО ВІДКЛЮЧЕННЯ СВІТЛА!\n\n"
+                          f"📍 Адреса: {STREET}, {HOUSE}\n"
+                          f"🔢 Група: {group}\n"
+                          f"📅 Дата: {start:%d.%m.%Y}\n\n"
+                          f"🕒 Початок: {start:%H:%M}\n"
+                          f"🔌 Орієнтовне завершення: {end:%H:%M}\n"
+                          f"⏳ Тривалість: {format_duration(start, end)}\n\n"
                           "Підготуйтеся заздалегідь."
                       )
 
