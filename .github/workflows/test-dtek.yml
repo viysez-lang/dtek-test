@@ -143,15 +143,15 @@ jobs:
                   print("Emergency outage data unchanged.")
                   return
 
-                          if previous is None and current is not None:
-                  message = (
-                      "🚨 АВАРІЙНЕ ВІДКЛЮЧЕННЯ\n\n"
-                      f"📍 Адреса: {STREET}, {HOUSE}\n"
-                      f"🔢 Група: {entry.primary_group}\n\n"
-                      "⚡ Причина: Екстрене відключення (без графіка)\n\n"
-                      f"🕒 Початок: {current['start_date']}\n"
-                      f"🔌 Очікуване відновлення: до {current['end_date']}\n\n"
-                      "_Інформація за даними ДТЕК._"
+              if previous is None and current is not None:
+              message = (
+                  "🚨 АВАРІЙНЕ ВІДКЛЮЧЕННЯ\n\n"
+                  f"📍 Адреса: {STREET}, {HOUSE}\n"
+                  f"🔢 Група: {entry.primary_group}\n\n"
+                  "⚡ Причина: Екстрене відключення (без графіка)\n\n"
+                  f"🕒 Початок: {current['start_date']}\n"
+                  f"🔌 Очікуване відновлення: до {current['end_date']}\n\n"
+                  "_Інформація за даними ДТЕК._"
                   )
                   send_telegram(message)
                   print("New emergency outage notification sent.")
