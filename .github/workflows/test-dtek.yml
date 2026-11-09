@@ -169,23 +169,26 @@ jobs:
                   print("Emergency outage disappearance notification sent.")
 
               else:
-                  if previous.get("end_date") != current["end_date"]:
-                      message = (
-                          "🔄 ДТЕК змінив орієнтовний час відновлення "
-                          "після аварійного відключення.\n\n"
-                          f"Адреса: {STREET}, {HOUSE}\n"
-                          f"Було: {previous['end_date']}\n"
-                          f"Стало: {current['end_date']}\n"
-                          f"Причина: {current['sub_type']}"
-                      )
-                  else:
-                      message = (
-                          "🔄 ДТЕК оновив дані аварійного відключення.\n\n"
-                          f"Адреса: {STREET}, {HOUSE}\n"
-                          f"Причина: {current['sub_type']}\n"
-                          f"Початок: {current['start_date']}\n"
-                          f"Орієнтовне відновлення: {current['end_date']}"
-                      )
+              if previous.get("end_date") != current["end_date"]:
+                  message = (
+                      "🔄 ОНОВЛЕННЯ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
+                      f"📍 Адреса: {STREET}, {HOUSE}\n"
+                      f"🔢 Група: {entry.primary_group}\n\n"
+                      f"🕒 Було очікуване відновлення: {previous['end_date']}\n"
+                      f"🔌 Новий час відновлення: до {current['end_date']}\n\n"
+                      f"⚡ Причина: {current['sub_type']}\n\n"
+                      "_Інформація за даними ДТЕК._"
+                  )
+              else:
+                  message = (
+                      "🔄 ДТЕК ОНОВИВ ДАНІ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
+                      f"📍 Адреса: {STREET}, {HOUSE}\n"
+                      f"🔢 Група: {entry.primary_group}\n\n"
+                      f"⚡ Причина: {current['sub_type']}\n"
+                      f"🕒 Початок: {current['start_date']}\n"
+                      f"🔌 Очікуване відновлення: до {current['end_date']}\n\n"
+                      "_Інформація за даними ДТЕК._"
+                  )
                   send_telegram(message)
                   print("Emergency outage update notification sent.")
 
