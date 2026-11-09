@@ -403,11 +403,12 @@ jobs:
                       )
                   elif date_key not in previous:
                       message = (
-                          "📅 ДТЕК опублікував новий графік!\n\n"
-                          f"Адреса: {STREET}, {HOUSE}\n"
-                          f"Група: {group}\n"
-                          f"Дата графіка: {schedule_date:%d.%m.%Y}\n\n"
-                          f"{describe_schedule(schedule_date, statuses)}"
+                          "📅 ДТЕК ОПУБЛІКУВАВ НОВИЙ ГРАФІК\n\n"
+                          f"📍 Адреса: {STREET}, {HOUSE}\n"
+                          f"🔢 Група: {group}\n"
+                          f"📆 Дата графіка: {schedule_date:%d.%m.%Y}\n\n"
+                          f"{describe_schedule(schedule_date, statuses)}\n\n"
+                          "_Інформація за даними ДТЕК._"
                       )
                       send_telegram(message)
                       print("New schedule notification sent:", date_key)
