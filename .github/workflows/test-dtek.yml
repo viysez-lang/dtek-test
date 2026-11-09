@@ -298,7 +298,7 @@ jobs:
 
               return merged
 
-                    def format_duration(start, end):
+          def format_duration(start, end):
               total_minutes = int((end - start).total_seconds() // 60)
               hours, minutes = divmod(total_minutes, 60)
 
