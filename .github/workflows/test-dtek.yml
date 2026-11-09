@@ -157,13 +157,13 @@ jobs:
                   print("New emergency outage notification sent.")
 
               elif previous is not None and current is None:
-                  message = (
-                      "ℹ️ ДТЕК більше не відображає аварійне відключення "
-                      "за вашою адресою.\n\n"
-                      f"Адреса: {STREET}, {HOUSE}\n"
-                      f"Попередній орієнтовний час відновлення: "
-                      f"{previous['end_date']}\n\n"
-                      "Це не підтверджує фактичне відновлення електроенергії."
+                   message = (
+                      "ℹ️ АВАРІЙНЕ ВІДКЛЮЧЕННЯ ЗАВЕРШЕНО\n\n"
+                      f"📍 Адреса: {STREET}, {HOUSE}\n"
+                      f"🔢 Група: {entry.primary_group}\n\n"
+                      f"🕒 Попередній час відновлення: {previous['end_date']}\n\n"
+                      "ДТЕК більше не відображає аварійне відключення.\n"
+                      "_Фактичне відновлення електроенергії не підтверджено._"
                   )
                   send_telegram(message)
                   print("Emergency outage disappearance notification sent.")
