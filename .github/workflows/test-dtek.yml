@@ -415,11 +415,12 @@ jobs:
 
                   elif previous[date_key].get("fingerprint") != fingerprint:
                       message = (
-                          "🔄 ДТЕК змінив графік відключень!\n\n"
-                          f"Адреса: {STREET}, {HOUSE}\n"
-                          f"Група: {group}\n"
-                          f"Дата графіка: {schedule_date:%d.%m.%Y}\n\n"
-                          f"{describe_schedule(schedule_date, statuses)}"
+                          "🔄 ДТЕК ОНОВИВ ГРАФІК ВІДКЛЮЧЕНЬ\n\n"
+                          f"📍 Адреса: {STREET}, {HOUSE}\n"
+                          f"🔢 Група: {group}\n"
+                          f"📆 Дата графіка: {schedule_date:%d.%m.%Y}\n\n"
+                          f"{describe_schedule(schedule_date, statuses)}\n\n"
+                          "_Інформація за даними ДТЕК._"
                       )
                       send_telegram(message)
                       print("Schedule update notification sent:", date_key)
