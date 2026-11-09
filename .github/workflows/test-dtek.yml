@@ -445,7 +445,9 @@ jobs:
                       outage_intervals(schedule_date, item["statuses"])
                   )
 
-              for start, end in sorted(all_outages):
+              sorted_outages = sorted(all_outages)
+
+              for index, (start, end) in enumerate(sorted_outages):
                   minutes = (start - now).total_seconds() / 60
                   key = start.strftime("%Y-%m-%d %H:%M")
 
@@ -469,6 +471,29 @@ jobs:
                       send_telegram(message)
                       state["alerted"].append(key)
                       print("Outage alert sent:", key)
+                      return_key = "return_" + end.strftime("%Y-%m-%d %H:%M")
+                      minutes_left = (end - now).total_seconds() / 60
+
+                      if start <= now < end and 0 < minutes_left <= 10 and return_key not in state["alerted"]:
+                          message = (
+                              "⚡ УВІМКНЕННЯ СВІТЛА ЧЕРЕЗ 10 ХВИЛИН!\n\n"
+                              f"📍 Адреса: {STREET}, {HOUSE}\n"
+                              f"🔢 Група: {group}\n\n"
+                              f"🕒 Орієнтовний час увімкнення: {end:%H:%M}\n"
+                              "⏳ Залишилося: 10 хвилин"
+                          )
+
+                          if index + 1 < len(sorted_outages):
+                              next_start, next_end = sorted_outages[index + 1]
+                              message += (
+                                  "\n\n🔌 Наступне відключення:\n"
+                                  f"{next_start:%H:%M}–{next_end:%H:%M} "
+                                  f"({format_duration(next_start, next_end)})"
+                              )
+
+                          send_telegram(message)
+                          state["alerted"].append(return_key)
+                          print("Power restoration alert sent:", return_key)
 
               state["known_schedules"] = current
               save_state(state)
