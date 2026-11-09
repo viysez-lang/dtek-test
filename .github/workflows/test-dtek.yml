@@ -157,7 +157,7 @@ jobs:
                   print("New emergency outage notification sent.")
 
               elif previous is not None and current is None:
-                   message = (
+                  message = (
                       "ℹ️ АВАРІЙНЕ ВІДКЛЮЧЕННЯ ЗАВЕРШЕНО\n\n"
                       f"📍 Адреса: {STREET}, {HOUSE}\n"
                       f"🔢 Група: {entry.primary_group}\n\n"
