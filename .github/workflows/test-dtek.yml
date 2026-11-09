@@ -168,7 +168,7 @@ jobs:
                   send_telegram(message)
                   print("Emergency outage disappearance notification sent.")
 
-             else:
+              else:
                   if previous.get("end_date") != current["end_date"]:
                       message = (
                           "🔄 ОНОВЛЕННЯ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
