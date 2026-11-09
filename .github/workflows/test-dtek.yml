@@ -168,32 +168,31 @@ jobs:
                   send_telegram(message)
                   print("Emergency outage disappearance notification sent.")
 
-              else:
-              if previous.get("end_date") != current["end_date"]:
-                  message = (
-                      "🔄 ОНОВЛЕННЯ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
-                      f"📍 Адреса: {STREET}, {HOUSE}\n"
-                      f"🔢 Група: {entry.primary_group}\n\n"
-                      f"🕒 Було очікуване відновлення: {previous['end_date']}\n"
-                      f"🔌 Новий час відновлення: до {current['end_date']}\n\n"
-                      f"⚡ Причина: {current['sub_type']}\n\n"
-                      "_Інформація за даними ДТЕК._"
-                  )
-              else:
-                  message = (
-                      "🔄 ДТЕК ОНОВИВ ДАНІ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
-                      f"📍 Адреса: {STREET}, {HOUSE}\n"
-                      f"🔢 Група: {entry.primary_group}\n\n"
-                      f"⚡ Причина: {current['sub_type']}\n"
-                      f"🕒 Початок: {current['start_date']}\n"
-                      f"🔌 Очікуване відновлення: до {current['end_date']}\n\n"
-                      "_Інформація за даними ДТЕК._"
-                  )
+             else:
+                  if previous.get("end_date") != current["end_date"]:
+                      message = (
+                          "🔄 ОНОВЛЕННЯ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
+                          f"📍 Адреса: {STREET}, {HOUSE}\n"
+                          f"🔢 Група: {entry.primary_group}\n\n"
+                          f"🕒 Було очікуване відновлення: {previous['end_date']}\n"
+                          f"🔌 Новий час відновлення: до {current['end_date']}\n\n"
+                          f"⚡ Причина: {current['sub_type']}\n\n"
+                          "_Інформація за даними ДТЕК._"
+                      )
+                  else:
+                      message = (
+                          "🔄 ДТЕК ОНОВИВ ДАНІ АВАРІЙНОГО ВІДКЛЮЧЕННЯ\n\n"
+                          f"📍 Адреса: {STREET}, {HOUSE}\n"
+                          f"🔢 Група: {entry.primary_group}\n\n"
+                          f"⚡ Причина: {current['sub_type']}\n"
+                          f"🕒 Початок: {current['start_date']}\n"
+                          f"🔌 Очікуване відновлення: до {current['end_date']}\n\n"
+                          "_Інформація за даними ДТЕК._"
+                      )
                   send_telegram(message)
                   print("Emergency outage update notification sent.")
 
               state[state_key] = current
-
 
           async def get_schedules():
               base = "https://www.dtek-dnem.com.ua"
