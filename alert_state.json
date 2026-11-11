@@ -51,12 +51,36 @@
         "23": "no",
         "24": "no"
       }
+    },
+    "2026-11-12": {
+      "fingerprint": "9f8f20408294c98d11ce88fb363b045b1ec45bba2939752d6320326717055eb1",
+      "statuses": {
+        "1": "first",
+        "2": "yes",
+        "3": "yes",
+        "4": "yes",
+        "5": "yes",
+        "6": "second",
+        "7": "no",
+        "8": "no",
+        "9": "no",
+        "10": "first",
+        "11": "yes",
+        "12": "yes",
+        "13": "yes",
+        "14": "yes",
+        "15": "yes",
+        "16": "yes",
+        "17": "no",
+        "18": "no",
+        "19": "no",
+        "20": "no",
+        "21": "yes",
+        "22": "yes",
+        "23": "yes",
+        "24": "yes"
+      }
     }
   },
-  "known_emergency_outage": {
-    "sub_type": "Аварійні ремонтні роботи",
-    "start_date": "05:52 11.11.2026",
-    "end_date": "00:55 12.11.2026",
-    "outage_type": "2"
-  }
+  "known_emergency_outage": null
 }
