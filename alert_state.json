@@ -50,6 +50,35 @@
         "23": "yes",
         "24": "second"
       }
+    },
+    "2026-11-14": {
+      "fingerprint": "5378449619b2f51dd016ca20d3efa91438e81b141e4b21b180a580086fd7fe1d",
+      "statuses": {
+        "1": "no",
+        "2": "no",
+        "3": "no",
+        "4": "first",
+        "5": "yes",
+        "6": "yes",
+        "7": "yes",
+        "8": "yes",
+        "9": "yes",
+        "10": "yes",
+        "11": "no",
+        "12": "no",
+        "13": "no",
+        "14": "no",
+        "15": "yes",
+        "16": "yes",
+        "17": "yes",
+        "18": "yes",
+        "19": "yes",
+        "20": "yes",
+        "21": "second",
+        "22": "no",
+        "23": "yes",
+        "24": "yes"
+      }
     }
   },
   "known_emergency_outage": null
