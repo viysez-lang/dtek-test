@@ -21,7 +21,7 @@
   ],
   "known_schedules": {
     "2026-11-15": {
-      "fingerprint": "6ca69e023b27af2ecc323c71f328a68c60995441e945d7d802403e5f7d669b73",
+      "fingerprint": "4c2528cc4def5b09dc49c891e9bf3feee37f31f1a85b63353a7fa84a6ea840b3",
       "statuses": {
         "1": "yes",
         "2": "yes",
@@ -46,7 +46,7 @@
         "21": "yes",
         "22": "second",
         "23": "no",
-        "24": "no"
+        "24": "yes"
       }
     }
   },
