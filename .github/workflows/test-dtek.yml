@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install dtek-blackout-client playwright
+          pip install dtek-blackout-client==0.1.12 playwright==1.64.1 curl_cffi==0.14.0
           python -m playwright install --with-deps chromium
 
       - name: Check schedules and send alerts
