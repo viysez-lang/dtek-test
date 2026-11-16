@@ -21,7 +21,7 @@
   ],
   "known_schedules": {
     "2026-11-16": {
-      "fingerprint": "d526c7c8000375d5571789de7d54af4a884ad325590158139bd317ac5d520aed",
+      "fingerprint": "cd4ca4867ccd4bed4fb91740cbd81d27a812736ca5448270e69998ce9206c7d5",
       "statuses": {
         "1": "yes",
         "2": "yes",
@@ -41,7 +41,7 @@
         "16": "no",
         "17": "no",
         "18": "no",
-        "19": "yes",
+        "19": "first",
         "20": "yes",
         "21": "yes",
         "22": "yes",
@@ -50,5 +50,10 @@
       }
     }
   },
-  "known_emergency_outage": null
+  "known_emergency_outage": {
+    "sub_type": "Екстренні відключення (Аварійне без застосування графіку погодинних відключень)",
+    "start_date": "16:42 16.11.2026",
+    "end_date": "20:46 16.11.2026",
+    "outage_type": "2"
+  }
 }
