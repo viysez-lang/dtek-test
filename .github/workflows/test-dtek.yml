@@ -449,6 +449,7 @@ jobs:
                       headers={
                           "Content-Type": "application/json",
                           "Authorization": "Bearer " + os.environ["CLOUDFLARE_UPDATE_SECRET"],
+                          "User-Agent": "Mozilla/5.0",
                       },
                       method="POST",
                   )
