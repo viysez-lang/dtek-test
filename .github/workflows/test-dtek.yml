@@ -426,7 +426,39 @@ jobs:
                       )
                       send_telegram(message)
                       print("Schedule update notification sent:", date_key)
+              schedule_text = (
+                  "📅 ГРАФІК ВІДКЛЮЧЕНЬ ДТЕК\n\n"
+                  f"📍 Адреса: {STREET}, {HOUSE}\n"
+                  f"🔢 Група: {group}\n\n"
+                  + "\n\n".join(
+                      f"📆 {schedule_date:%d.%m.%Y}\n"
+                      f"{describe_schedule(schedule_date, statuses)}"
+                      for schedule_date, statuses in schedules
+                  )
+                  + "\n\nІнформація за даними ДТЕК."
+              )
 
+              try:
+                  payload = json.dumps({
+                      "schedule": schedule_text
+                  }).encode("utf-8")
+
+                  request = urllib.request.Request(
+                      os.environ["CLOUDFLARE_WORKER_URL"].rstrip("/") + "/update-schedule",
+                      data=payload,
+                      headers={
+                          "Content-Type": "application/json",
+                          "Authorization": "Bearer " + os.environ["CLOUDFLARE_UPDATE_SECRET"],
+                      },
+                      method="POST",
+                  )
+
+                  with urllib.request.urlopen(request, timeout=20) as response:
+                      print("Cloudflare schedule updated:", response.status)
+
+              except Exception as e:
+                  print("Cloudflare update error:", e)
+                  
               cutoff = (
                   now.date() - timedelta(days=7)
               ).isoformat()
