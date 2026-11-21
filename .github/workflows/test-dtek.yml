@@ -458,6 +458,8 @@ jobs:
 
               except Exception as e:
                   print("Cloudflare update error:", e)
+                  if hasattr(e, "read"):
+                      print("Cloudflare response:", e.read().decode("utf-8", errors="replace"))
                   
               cutoff = (
                   now.date() - timedelta(days=7)
