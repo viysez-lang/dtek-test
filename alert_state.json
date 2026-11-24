@@ -47,7 +47,7 @@
   "known_emergency_outage": {
     "sub_type": "Аварійні ремонтні роботи",
     "start_date": "22:42 23.11.2026",
-    "end_date": "06:30 24.11.2026",
+    "end_date": "10:15 24.11.2026",
     "outage_type": "2"
   }
 }
