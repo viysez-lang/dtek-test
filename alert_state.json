@@ -47,5 +47,10 @@
       }
     }
   },
-  "known_emergency_outage": null
+  "known_emergency_outage": {
+    "sub_type": "Екстренні відключення (Аварійне без застосування графіку погодинних відключень)",
+    "start_date": "04:25 28.11.2026",
+    "end_date": "08:18 28.11.2026",
+    "outage_type": "2"
+  }
 }
